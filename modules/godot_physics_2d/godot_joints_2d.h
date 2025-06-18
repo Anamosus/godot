@@ -187,3 +187,46 @@ public:
 
 	GodotDampedSpringJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
 };
+
+class GodotPulleyJoint2D : public GodotJoint2D {
+	union {
+		struct {
+			GodotBody2D *A;
+			GodotBody2D *B;
+		};
+
+		GodotBody2D *_arr[2] = { nullptr, nullptr };
+	};
+
+	Vector2 anchor_A;
+	Vector2 anchor_B;
+
+	Vector2 connected_Anochor_A;
+	Vector2 connected_Anchor_B;
+
+	real_t length_A;
+	real_t length_B;
+
+	real_t rest_length = 0.0;
+	real_t damping = 1.5;
+	real_t stiffness = 20.0;
+
+	Vector2 rA, rB;
+	Vector2 n;
+	Vector2 j;
+	real_t n_mass = 0.0;
+	real_t target_vrn = 0.0;
+	real_t v_coef = 0.0;
+
+public:
+	virtual PhysicsServer2D::JointType get_type() const override { return PhysicsServer2D::JOINT_TYPE_PULLEY; }
+
+	virtual bool setup(real_t p_step) override;
+	virtual bool pre_solve(real_t p_step) override;
+	virtual void solve(real_t p_step) override;
+
+	void set_param(PhysicsServer2D::PulleyParam p_param, real_t p_value);
+	real_t get_param(PhysicsServer2D::PulleyParam p_param) const;
+
+	GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
+};

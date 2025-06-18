@@ -593,3 +593,113 @@ GodotDampedSpringJoint2D::GodotDampedSpringJoint2D(const Vector2 &p_anchor_a, co
 	A->add_constraint(this, 0);
 	B->add_constraint(this, 1);
 }
+
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+
+bool GodotPulleyJoint2D::setup(real_t p_step) {
+	dynamic_A = (A->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
+	dynamic_B = (B->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
+
+	if (!dynamic_A && !dynamic_B) {
+		return false;
+	}
+
+	rA = A->get_transform().basis_xform(anchor_A);
+	rB = B->get_transform().basis_xform(anchor_B);
+
+	Vector2 delta = (B->get_transform().get_origin() + rB) - (A->get_transform().get_origin() + rA);
+	real_t dist = delta.length();
+
+	if (dist) {
+		n = delta / dist;
+	} else {
+		n = Vector2();
+	}
+
+	real_t k = k_scalar(A, B, rA, rB, n);
+	n_mass = 1.0f / k;
+
+	target_vrn = 0.0f;
+	v_coef = 1.0f - Math::exp(-damping * (p_step)*k);
+
+	// Calculate spring force.
+	real_t f_spring = (rest_length - dist) * stiffness;
+	j = n * f_spring * (p_step);
+
+	return true;
+}
+
+bool GodotPulleyJoint2D::pre_solve(real_t p_step) {
+	// Apply spring force.
+	if (dynamic_A) {
+		A->apply_impulse(-j, rA);
+	}
+	if (dynamic_B) {
+		B->apply_impulse(j, rB);
+	}
+
+	return true;
+}
+
+void GodotPulleyJoint2D::solve(real_t p_step) {
+	// compute relative velocity
+	real_t vrn = normal_relative_velocity(A, B, rA, rB, n) - target_vrn;
+
+	// compute velocity loss from drag
+	// not 100% certain this is derived correctly, though it makes sense
+	real_t v_damp = -vrn * v_coef;
+	target_vrn = vrn + v_damp;
+	Vector2 j_new = n * v_damp * n_mass;
+
+	if (dynamic_A) {
+		A->apply_impulse(-j_new, rA);
+	}
+	if (dynamic_B) {
+		B->apply_impulse(j_new, rB);
+	}
+}
+
+void GodotPulleyJoint2D::set_param(PhysicsServer2D::PulleyParam p_param, real_t p_value) {
+	switch (p_param) {
+		case PhysicsServer2D::PULLEY_REST_LENGTH: {
+			rest_length = p_value;
+		} break;
+		case PhysicsServer2D::PULLEY_DAMPING: {
+			damping = p_value;
+		} break;
+		case PhysicsServer2D::PULLEY_STIFFNESS: {
+			stiffness = p_value;
+		} break;
+	}
+}
+
+real_t GodotPulleyJoint2D::get_param(PhysicsServer2D::PulleyParam p_param) const {
+	switch (p_param) {
+		case PhysicsServer2D::PULLEY_REST_LENGTH: {
+			return rest_length;
+		} break;
+		case PhysicsServer2D::PULLEY_DAMPING: {
+			return damping;
+		} break;
+		case PhysicsServer2D::PULLEY_STIFFNESS: {
+			return stiffness;
+		} break;
+	}
+
+	ERR_FAIL_V(0);
+}
+
+GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
+		GodotJoint2D(_arr, 2) {
+	A = p_body_a;
+	B = p_body_b;
+	anchor_A = A->get_inv_transform().xform(p_anchor_a);
+	anchor_B = B->get_inv_transform().xform(p_anchor_b);
+
+	rest_length = p_anchor_a.distance_to(p_anchor_b);
+
+	A->add_constraint(this, 0);
+	B->add_constraint(this, 1);
+}
