@@ -204,9 +204,6 @@ class GodotPulleyJoint2D : public GodotJoint2D {
 	Vector2 connected_Anochor_A;
 	Vector2 connected_Anchor_B;
 
-	real_t length_A;
-	real_t length_B;
-
 	real_t rest_length = 0.0;
 	real_t damping = 1.5;
 	real_t stiffness = 20.0;
