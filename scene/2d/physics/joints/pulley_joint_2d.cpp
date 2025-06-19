@@ -40,18 +40,25 @@ void PulleyJoint2D::_notification(int p_what) {
 			break;
 
 		case NOTIFICATION_PROCESS: {
-			Node *node_a = get_node_or_null(other_anchor);
-			Node2D *anchor_a = Object::cast_to<Node2D>(node_a);
-			if (anchor_a) {
-				Transform2D temp_transform = get_global_transform().affine_inverse() * anchor_a->get_global_transform();
+			Node *node_o = get_node_or_null(other_anchor);
+			Node2D *anchor_o = Object::cast_to<Node2D>(node_o);
+			if (anchor_o) {				
+				Transform2D temp_transform = get_global_transform().affine_inverse() * anchor_o->get_global_transform();
 				if (temp_transform != other_transform) {
 					other_transform = temp_transform;
 					queue_redraw();
 				}
 			}
+
+			if (!node_o) {
+				warning = RTR("Other anchor must be assinged");				
+			} else if (!anchor_o) {
+				warning = RTR("Other anchor must be a Node2D");				
+			} else {
+				warning = String();
+			}	
 			break;
-		}
-			
+		}			
 
 		case NOTIFICATION_DRAW: {
 			if (!is_inside_tree()) {
@@ -66,6 +73,8 @@ void PulleyJoint2D::_notification(int p_what) {
 			draw_line(Point2(-10, length_a), Point2(+10, length_a), Color(0.7, 0.6, 0.0, 0.5), 3);
 			draw_line(Point2(0, 0), Point2(0, length_a), Color(0.7, 0.6, 0.0, 0.5), 3);
 
+
+
 			if (get_node_or_null(other_anchor)) {
 				draw_set_transform_matrix(other_transform);
 				draw_line(Point2(-10, 0), Point2(+10, 0), Color(0.7, 0.6, 0.0, 0.5), 3);
@@ -79,16 +88,36 @@ void PulleyJoint2D::_notification(int p_what) {
 }
 
 void PulleyJoint2D::_configure_joint(RID p_joint, PhysicsBody2D *body_a, PhysicsBody2D *body_b) {
-	Transform2D gt = get_global_transform();
-	Vector2 anchor_A = gt.get_origin();
-	Vector2 anchor_B = gt.xform(Vector2(0, length_a));
+	Node *node_o = get_node_or_null(other_anchor);
+	Node2D *anchor_o = Object::cast_to<Node2D>(node_o);
 
-	PhysicsServer2D::get_singleton()->joint_make_pulley(p_joint, anchor_A, anchor_B, body_a->get_rid(), body_b->get_rid());
+	if (!anchor_o) {
+		return;
+	}
+
+	Transform2D gtA = get_global_transform();
+	Vector2 anchor_A = gtA.get_origin();
+	Vector2 connected_anchor_A = gtA.xform(Vector2(0, length_a));
+
+	Transform2D gtB = anchor_o->get_global_transform();
+	Vector2 anchor_B = gtB.get_origin();
+	Vector2 connected_anchor_B = gtB.xform(Vector2(0, length_b));
+
+	PhysicsServer2D::get_singleton()->joint_make_pulley(p_joint, anchor_A, anchor_B, connected_anchor_A, connected_anchor_B, body_a->get_rid(), body_b->get_rid());
 	if (rest_length) {
 		PhysicsServer2D::get_singleton()->pulley_joint_set_param(p_joint, PhysicsServer2D::PULLEY_REST_LENGTH, rest_length);
 	}
 	PhysicsServer2D::get_singleton()->pulley_joint_set_param(p_joint, PhysicsServer2D::PULLEY_STIFFNESS, stiffness);
 	PhysicsServer2D::get_singleton()->pulley_joint_set_param(p_joint, PhysicsServer2D::PULLEY_DAMPING, damping);
+}
+
+PackedStringArray PulleyJoint2D::get_configuration_warnings() const {
+	PackedStringArray warnings = Joint2D::get_configuration_warnings();
+
+	if (!warning.is_empty()) {
+		warnings.push_back(warning);
+	}
+	return warnings;
 }
 
 void PulleyJoint2D::set_length_a(real_t p_length) {
@@ -153,7 +182,8 @@ void PulleyJoint2D::set_other_anchor(const NodePath &p_other_anchor) {
 		return;
 	}
 	other_anchor = p_other_anchor;
-	_update_joint();	
+	queue_redraw();
+	_update_joint();
 }
 
 NodePath PulleyJoint2D::get_other_anchor() const {

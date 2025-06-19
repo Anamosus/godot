@@ -416,7 +416,7 @@ public:
 	EXBIND4(joint_make_pin, RID, const Vector2 &, RID, RID)
 	EXBIND6(joint_make_groove, RID, const Vector2 &, const Vector2 &, const Vector2 &, RID, RID)
 	EXBIND5(joint_make_damped_spring, RID, const Vector2 &, const Vector2 &, RID, RID)
-	EXBIND5(joint_make_pulley, RID, const Vector2 &, const Vector2 &, RID, RID)
+	EXBIND7(joint_make_pulley, RID, const Vector2 &, const Vector2 &, const Vector2 &, const Vector2 &, RID, RID)
 
 
 	EXBIND3(pin_joint_set_flag, RID, PinJointFlag, bool)

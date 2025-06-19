@@ -47,6 +47,8 @@ class PulleyJoint2D : public Joint2D {
 	NodePath other_anchor;
 	Transform2D other_transform;
 
+	String warning;
+
 protected:
 	void _notification(int p_what);
 
@@ -54,6 +56,7 @@ protected:
 	static void _bind_methods();
 
 public:
+	virtual PackedStringArray get_configuration_warnings() const override;
 	void set_rest_length(real_t p_rest_length);
 	real_t get_rest_length() const;
 

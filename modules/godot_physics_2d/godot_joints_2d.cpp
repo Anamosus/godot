@@ -691,10 +691,14 @@ real_t GodotPulleyJoint2D::get_param(PhysicsServer2D::PulleyParam p_param) const
 	ERR_FAIL_V(0);
 }
 
-GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
-		GodotJoint2D(_arr, 2) {
+
+GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_connected_anchor_a,
+		const Vector2 &p_connected_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) : GodotJoint2D(_arr, 2) {
 	A = p_body_a;
 	B = p_body_b;
+	connected_anchor_A = p_connected_anchor_a;
+	connected_anchor_B = p_connected_anchor_a;
+
 	anchor_A = A->get_inv_transform().xform(p_anchor_a);
 	anchor_B = B->get_inv_transform().xform(p_anchor_b);
 

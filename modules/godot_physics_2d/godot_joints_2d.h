@@ -201,8 +201,8 @@ class GodotPulleyJoint2D : public GodotJoint2D {
 	Vector2 anchor_A;
 	Vector2 anchor_B;
 
-	Vector2 connected_Anochor_A;
-	Vector2 connected_Anchor_B;
+	Vector2 connected_anchor_A;
+	Vector2 connected_anchor_B;
 
 	real_t rest_length = 0.0;
 	real_t damping = 1.5;
@@ -225,5 +225,7 @@ public:
 	void set_param(PhysicsServer2D::PulleyParam p_param, real_t p_value);
 	real_t get_param(PhysicsServer2D::PulleyParam p_param) const;
 
-	GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
+	GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_connected_anchor_a,
+			const Vector2 &p_connected_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
 };
+

@@ -1158,7 +1158,9 @@ void GodotPhysicsServer2D::joint_make_damped_spring(RID p_joint, const Vector2 &
 	memdelete(prev_joint);
 }
 
-void GodotPhysicsServer2D::joint_make_pulley(RID p_joint, const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, RID p_body_a, RID p_body_b) {
+
+void GodotPhysicsServer2D::joint_make_pulley(RID p_joint, const Vector2 &p_anchor_a, const Vector2 &p_anchor_b,
+		const Vector2 &p_connected_anchor_a, const Vector2 &p_connected_anchor_b, RID p_body_a, RID p_body_b) {
 	GodotBody2D *A = body_owner.get_or_null(p_body_a);
 	ERR_FAIL_NULL(A);
 
@@ -1168,7 +1170,7 @@ void GodotPhysicsServer2D::joint_make_pulley(RID p_joint, const Vector2 &p_ancho
 	GodotJoint2D *prev_joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL(prev_joint);
 
-	GodotJoint2D *joint = memnew(GodotPulleyJoint2D(p_anchor_a, p_anchor_b, A, B));
+	GodotJoint2D *joint = memnew(GodotPulleyJoint2D(p_anchor_a, p_anchor_b, p_connected_anchor_a, p_connected_anchor_b, A, B));
 
 	joint_owner.replace(p_joint, joint);
 	joint->copy_settings_from(prev_joint);
