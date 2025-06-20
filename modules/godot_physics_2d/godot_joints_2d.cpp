@@ -161,9 +161,10 @@ bool GodotPinJoint2D::setup(real_t p_step) {
 	return true;
 }
 
-inline Vector2 custom_cross(const Vector2 &p_vec, real_t p_other) {
+static inline Vector2 custom_cross(const Vector2 &p_vec, real_t p_other) {
 	return Vector2(p_other * p_vec.y, -p_other * p_vec.x);
 }
+
 
 bool GodotPinJoint2D::pre_solve(real_t p_step) {
 	// Apply accumulated impulse.
@@ -598,6 +599,25 @@ GodotDampedSpringJoint2D::GodotDampedSpringJoint2D(const Vector2 &p_anchor_a, co
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 
+
+static inline real_t k_scalar(GodotBody2D *a, GodotBody2D *b, const Vector2 &rA, const Vector2 &rB, const Vector2 &nA, const Vector2 &nB) {
+	real_t value = 0.0;
+
+	{
+		value += a->get_inv_mass();
+		real_t rcn = (rA - a->get_center_of_mass()).cross(nA);
+		value += a->get_inv_inertia() * rcn * rcn;
+	}
+
+	if (b) {
+		value += b->get_inv_mass();
+		real_t rcn = (rB - b->get_center_of_mass()).cross(-nB);
+		value += b->get_inv_inertia() * rcn * rcn;
+	}
+
+	return value;
+}
+
 bool GodotPulleyJoint2D::setup(real_t p_step) {
 	dynamic_A = (A->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
 	dynamic_B = (B->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
@@ -609,55 +629,72 @@ bool GodotPulleyJoint2D::setup(real_t p_step) {
 	rA = A->get_transform().basis_xform(anchor_A);
 	rB = B->get_transform().basis_xform(anchor_B);
 
-	Vector2 delta = (B->get_transform().get_origin() + rB) - (A->get_transform().get_origin() + rA);
-	real_t dist = delta.length();
+	Vector2 deltaA =  (A->get_transform().get_origin() + rA) - (ground_anchor_A) ;
+	real_t distA = deltaA.length();
 
-	if (dist) {
-		n = delta / dist;
+	if (distA) {
+		nA = deltaA / distA;
 	} else {
-		n = Vector2();
+		nA = Vector2();
 	}
 
-	real_t k = k_scalar(A, B, rA, rB, n);
+	Vector2 deltaB = (B->get_transform().get_origin() + rB) - (ground_anchor_B);
+	real_t distB = deltaB.length();
+
+	if (distB) {
+		nB = deltaB / distB;
+	} else {
+		nB = Vector2();
+	}
+
+	real_t k = k_scalar(A, B, rA, rB, nA, nB);
 	n_mass = 1.0f / k;
 
 	target_vrn = 0.0f;
 	v_coef = 1.0f - Math::exp(-damping * (p_step)*k);
 
 	// Calculate spring force.
-	real_t f_spring = (rest_length - dist) * stiffness;
-	j = n * f_spring * (p_step);
+	real_t f_spring = (rest_length - (distA + distB)) * stiffness;
+	jA = nA * f_spring * (p_step);
+	jB = nB * f_spring * (p_step);
 
-	return true;
+	return true;	
 }
 
 bool GodotPulleyJoint2D::pre_solve(real_t p_step) {
 	// Apply spring force.
 	if (dynamic_A) {
-		A->apply_impulse(-j, rA);
+		A->apply_impulse(jA, rA);
 	}
 	if (dynamic_B) {
-		B->apply_impulse(j, rB);
+		B->apply_impulse(jB, rB);
 	}
-
 	return true;
+}
+
+
+static inline real_t
+normal_relative_velocity(GodotBody2D *a, GodotBody2D *b, Vector2 rA, Vector2 rB, Vector2 nA, Vector2 nB) {
+	Vector2 vA = a->get_linear_velocity() - (rA - a->get_center_of_mass()).orthogonal() * a->get_angular_velocity();
+	Vector2 vB = b->get_linear_velocity() - (rB - b->get_center_of_mass()).orthogonal() * b->get_angular_velocity();
+
+	return vA.dot(nA) + vB.dot(nB);
 }
 
 void GodotPulleyJoint2D::solve(real_t p_step) {
 	// compute relative velocity
-	real_t vrn = normal_relative_velocity(A, B, rA, rB, n) - target_vrn;
+	 real_t vrn = normal_relative_velocity(A, B, rA, rB, nA, nB) - target_vrn;
 
 	// compute velocity loss from drag
 	// not 100% certain this is derived correctly, though it makes sense
 	real_t v_damp = -vrn * v_coef;
 	target_vrn = vrn + v_damp;
-	Vector2 j_new = n * v_damp * n_mass;
 
 	if (dynamic_A) {
-		A->apply_impulse(-j_new, rA);
+		A->apply_impulse(nA * v_damp * n_mass, rA);
 	}
 	if (dynamic_B) {
-		B->apply_impulse(j_new, rB);
+		B->apply_impulse(nB * v_damp * n_mass, rB);
 	}
 }
 
@@ -692,17 +729,17 @@ real_t GodotPulleyJoint2D::get_param(PhysicsServer2D::PulleyParam p_param) const
 }
 
 
-GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_connected_anchor_a,
-		const Vector2 &p_connected_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) : GodotJoint2D(_arr, 2) {
+GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_ground_anchor_a,
+		const Vector2 &p_ground_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) : GodotJoint2D(_arr, 2) {
 	A = p_body_a;
 	B = p_body_b;
-	connected_anchor_A = p_connected_anchor_a;
-	connected_anchor_B = p_connected_anchor_a;
+	ground_anchor_A = p_ground_anchor_a;
+	ground_anchor_B = p_ground_anchor_b;
 
 	anchor_A = A->get_inv_transform().xform(p_anchor_a);
 	anchor_B = B->get_inv_transform().xform(p_anchor_b);
 
-	rest_length = p_anchor_a.distance_to(p_anchor_b);
+	rest_length = p_anchor_a.distance_to(p_ground_anchor_a) + p_anchor_b.distance_to(p_ground_anchor_b);
 
 	A->add_constraint(this, 0);
 	B->add_constraint(this, 1);

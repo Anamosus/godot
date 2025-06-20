@@ -97,13 +97,13 @@ void PulleyJoint2D::_configure_joint(RID p_joint, PhysicsBody2D *body_a, Physics
 
 	Transform2D gtA = get_global_transform();
 	Vector2 anchor_A = gtA.get_origin();
-	Vector2 connected_anchor_A = gtA.xform(Vector2(0, length_a));
+	Vector2 ground_anchor_A = gtA.xform(Vector2(0, length_a));
 
 	Transform2D gtB = anchor_o->get_global_transform();
 	Vector2 anchor_B = gtB.get_origin();
 	Vector2 connected_anchor_B = gtB.xform(Vector2(0, length_b));
 
-	PhysicsServer2D::get_singleton()->joint_make_pulley(p_joint, anchor_A, anchor_B, connected_anchor_A, connected_anchor_B, body_a->get_rid(), body_b->get_rid());
+	PhysicsServer2D::get_singleton()->joint_make_pulley(p_joint, anchor_A, anchor_B, ground_anchor_A, connected_anchor_B, body_a->get_rid(), body_b->get_rid());
 	if (rest_length) {
 		PhysicsServer2D::get_singleton()->pulley_joint_set_param(p_joint, PhysicsServer2D::PULLEY_REST_LENGTH, rest_length);
 	}
