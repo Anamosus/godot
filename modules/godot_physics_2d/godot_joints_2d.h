@@ -204,16 +204,25 @@ class GodotPulleyJoint2D : public GodotJoint2D {
 	Vector2 ground_anchor_A;
 	Vector2 ground_anchor_B;
 
-	real_t rest_length = 0.0;
-	real_t damping = 1.5;
-	real_t stiffness = 20.0;
+	real_t min_length = 0.0;
+	real_t max_length = 0.0;
+
+	real_t damping = 1;
+	real_t frequency = 20.0;
+
+	bool fixed_length = false;
 
 	Vector2 rA, rB;
 	Vector2 nA, nB;
-	Vector2 jA, jB;
 	real_t n_mass = 0.0;
+
 	real_t target_vrn = 0.0;
-	real_t v_coef = 0.0;
+	real_t max_impulse = 0.0;
+	real_t min_impulse = 0.0;
+
+	real_t biasRate = 0.0;
+	real_t massScale = 0.0;
+	real_t impulseScale = 0.0;	
 
 public:
 	virtual PhysicsServer2D::JointType get_type() const override { return PhysicsServer2D::JOINT_TYPE_PULLEY; }
@@ -225,7 +234,64 @@ public:
 	void set_param(PhysicsServer2D::PulleyParam p_param, real_t p_value);
 	real_t get_param(PhysicsServer2D::PulleyParam p_param) const;
 
+	void set_param2D(PhysicsServer2D::PulleyParam p_param, Vector2 p_value);
+	Vector2 get_param2D(PhysicsServer2D::PulleyParam p_param) const;
+
+
+	void set_flag(PhysicsServer2D::DistanceFlag p_flag, bool p_enabled);
+	bool get_flag(PhysicsServer2D::DistanceFlag p_flag) const;
+
 	GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_ground_anchor_a,
 			const Vector2 &p_ground_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
 };
+
+
+class GodotDistanceJoint2D : public GodotJoint2D {
+	union {
+		struct {
+			GodotBody2D *A;
+			GodotBody2D *B;
+		};
+
+		GodotBody2D *_arr[2] = { nullptr, nullptr };
+	};
+		
+	real_t min_length = 0.0;
+	real_t max_length = 50.0;
+
+	real_t damping = 1.0;
+	real_t frequency = 20.0;
+
+	bool fixed_length = false;
+
+	Vector2 anchor_A;
+	Vector2 anchor_B;
+
+	Vector2 rA, rB;
+	Vector2 n;
+	real_t n_mass = 0.0;
+
+	real_t max_impulse = 0.0;
+	real_t min_impulse = 0.0;
+
+	real_t biasRate = 0.0;
+	real_t massScale = 0.0;
+	real_t impulseScale = 0.0;	
+
+public:
+	virtual PhysicsServer2D::JointType get_type() const override { return PhysicsServer2D::JOINT_TYPE_DISTANCE; }
+
+	virtual bool setup(real_t p_step) override;
+	virtual bool pre_solve(real_t p_step) override;
+	virtual void solve(real_t p_step) override;
+
+	void set_param(PhysicsServer2D::DistanceParam p_param, real_t p_value);
+	real_t get_param(PhysicsServer2D::DistanceParam p_param) const;
+
+	void set_flag(PhysicsServer2D::DistanceFlag p_flag, bool p_enabled);
+	bool get_flag(PhysicsServer2D::DistanceFlag p_flag) const;
+
+	GodotDistanceJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
+};
+
 

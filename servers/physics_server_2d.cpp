@@ -776,7 +776,8 @@ void PhysicsServer2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("joint_make_pin", "joint", "anchor", "body_a", "body_b"), &PhysicsServer2D::joint_make_pin, DEFVAL(RID()));
 	ClassDB::bind_method(D_METHOD("joint_make_groove", "joint", "groove1_a", "groove2_a", "anchor_b", "body_a", "body_b"), &PhysicsServer2D::joint_make_groove, DEFVAL(RID()), DEFVAL(RID()));
 	ClassDB::bind_method(D_METHOD("joint_make_damped_spring", "joint", "anchor_a", "anchor_b", "body_a", "body_b"), &PhysicsServer2D::joint_make_damped_spring, DEFVAL(RID()));
-	ClassDB::bind_method(D_METHOD("joint_make_pulley", "joint", "anchor_a", "anchor_b", "body_a", "body_b"), &PhysicsServer2D::joint_make_pulley, DEFVAL(RID()));
+	ClassDB::bind_method(D_METHOD("joint_make_distance", "joint", "anchor_a", "anchor_b", "body_a", "body_b"), &PhysicsServer2D::joint_make_distance, DEFVAL(RID()));
+	ClassDB::bind_method(D_METHOD("joint_make_pulley", "joint", "anchor_a", "anchor_b", "ground_anchor_a", "ground_anchor_b", "body_a", "body_b"), &PhysicsServer2D::joint_make_pulley, DEFVAL(RID()));
 
 	ClassDB::bind_method(D_METHOD("pin_joint_set_flag", "joint", "flag", "enabled"), &PhysicsServer2D::pin_joint_set_flag);
 	ClassDB::bind_method(D_METHOD("pin_joint_get_flag", "joint", "flag"), &PhysicsServer2D::pin_joint_get_flag);
@@ -787,8 +788,23 @@ void PhysicsServer2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("damped_spring_joint_set_param", "joint", "param", "value"), &PhysicsServer2D::damped_spring_joint_set_param);
 	ClassDB::bind_method(D_METHOD("damped_spring_joint_get_param", "joint", "param"), &PhysicsServer2D::damped_spring_joint_get_param);
 
+	ClassDB::bind_method(D_METHOD("distance_joint_set_param", "joint", "param", "value"), &PhysicsServer2D::distance_joint_set_param);
+	ClassDB::bind_method(D_METHOD("distance_joint_get_param", "joint", "param"), &PhysicsServer2D::distance_joint_get_param);
+
+	ClassDB::bind_method(D_METHOD("distance_joint_set_flag", "joint", "flag", "value"), &PhysicsServer2D::distance_joint_set_flag);
+	ClassDB::bind_method(D_METHOD("distance_joint_get_flag", "joint", "flag"), &PhysicsServer2D::distance_joint_get_flag);
+
+
 	ClassDB::bind_method(D_METHOD("pulley_joint_set_param", "joint", "param", "value"), &PhysicsServer2D::pulley_joint_set_param);
 	ClassDB::bind_method(D_METHOD("pulley_joint_get_param", "joint", "param"), &PhysicsServer2D::pulley_joint_get_param);
+
+	ClassDB::bind_method(D_METHOD("pulley_joint_set_param2D", "joint", "param", "value"), &PhysicsServer2D::pulley_joint_set_param2D);
+	ClassDB::bind_method(D_METHOD("pulley_joint_get_param2D", "joint", "param"), &PhysicsServer2D::pulley_joint_get_param2D);
+
+
+	ClassDB::bind_method(D_METHOD("pulley_joint_set_flag", "joint", "flag", "value"), &PhysicsServer2D::distance_joint_set_flag);
+	ClassDB::bind_method(D_METHOD("pulley_joint_get_flag", "joint", "flag"), &PhysicsServer2D::distance_joint_get_flag);
+
 
 	ClassDB::bind_method(D_METHOD("joint_get_type", "joint"), &PhysicsServer2D::joint_get_type);
 
@@ -864,6 +880,7 @@ void PhysicsServer2D::_bind_methods() {
 	BIND_ENUM_CONSTANT(JOINT_TYPE_PIN);
 	BIND_ENUM_CONSTANT(JOINT_TYPE_GROOVE);
 	BIND_ENUM_CONSTANT(JOINT_TYPE_DAMPED_SPRING);
+	BIND_ENUM_CONSTANT(JOINT_TYPE_DISTANCE);
 	BIND_ENUM_CONSTANT(JOINT_TYPE_PULLEY);
 	BIND_ENUM_CONSTANT(JOINT_TYPE_MAX);
 
@@ -883,7 +900,18 @@ void PhysicsServer2D::_bind_methods() {
 	BIND_ENUM_CONSTANT(DAMPED_SPRING_STIFFNESS);
 	BIND_ENUM_CONSTANT(DAMPED_SPRING_DAMPING);
 
-	BIND_ENUM_CONSTANT(PULLEY_REST_LENGTH);
+	BIND_ENUM_CONSTANT(DISTANCE_MIN_LENGTH);
+	BIND_ENUM_CONSTANT(DISTANCE_MAX_LENGTH);
+
+	BIND_ENUM_CONSTANT(DISTANCE_SPRING_FREQUENCY);
+	BIND_ENUM_CONSTANT(DISTANCE_SPRING_DAMPING);
+
+	BIND_ENUM_CONSTANT(DISTANCE_FIXED_LENGTH);
+
+	BIND_ENUM_CONSTANT(PULLEY_MIN_LENGTH);
+	BIND_ENUM_CONSTANT(PULLEY_MIN_LENGTH);
+	BIND_ENUM_CONSTANT(PULLEY_ANCHOR_A);
+	BIND_ENUM_CONSTANT(PULLEY_ANCHOR_B);
 	BIND_ENUM_CONSTANT(PULLEY_STIFFNESS);
 	BIND_ENUM_CONSTANT(PULLEY_DAMPING);
 

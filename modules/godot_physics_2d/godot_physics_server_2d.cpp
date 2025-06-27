@@ -1158,6 +1158,22 @@ void GodotPhysicsServer2D::joint_make_damped_spring(RID p_joint, const Vector2 &
 	memdelete(prev_joint);
 }
 
+void GodotPhysicsServer2D::joint_make_distance(RID p_joint, const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, RID p_body_a, RID p_body_b) {
+	GodotBody2D *A = body_owner.get_or_null(p_body_a);
+	ERR_FAIL_NULL(A);
+
+	GodotBody2D *B = body_owner.get_or_null(p_body_b);
+	ERR_FAIL_NULL(B);
+
+	GodotJoint2D *prev_joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL(prev_joint);
+
+	GodotJoint2D *joint = memnew(GodotDistanceJoint2D(p_anchor_a, p_anchor_b, A, B));
+
+	joint_owner.replace(p_joint, joint);
+	joint->copy_settings_from(prev_joint);
+	memdelete(prev_joint);
+}
 
 void GodotPhysicsServer2D::joint_make_pulley(RID p_joint, const Vector2 &p_anchor_a, const Vector2 &p_anchor_b,
 		const Vector2 &p_ground_anchor_a, const Vector2 &p_ground_anchor_b, RID p_body_a, RID p_body_b) {
@@ -1231,13 +1247,67 @@ real_t GodotPhysicsServer2D::damped_spring_joint_get_param(RID p_joint, DampedSp
 	return dsj->get_param(p_param);
 }
 
+void GodotPhysicsServer2D::distance_joint_set_param(RID p_joint, DistanceParam p_param, real_t p_value) {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL(joint);
+	ERR_FAIL_COND(joint->get_type() != JOINT_TYPE_DISTANCE);
+
+	GodotDistanceJoint2D *dj = static_cast<GodotDistanceJoint2D *>(joint);
+	dj->set_param(p_param, p_value);
+}
+
+real_t GodotPhysicsServer2D::distance_joint_get_param(RID p_joint, DistanceParam p_param) const {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL_V(joint, 0);
+	ERR_FAIL_COND_V(joint->get_type() != JOINT_TYPE_DISTANCE, 0);
+
+	GodotDistanceJoint2D *dj = static_cast<GodotDistanceJoint2D *>(joint);
+	return dj->get_param(p_param);
+}
+
+void GodotPhysicsServer2D::distance_joint_set_flag(RID p_joint, DistanceFlag p_flag, bool p_enabled) {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL(joint);
+	ERR_FAIL_COND(joint->get_type() != JOINT_TYPE_DISTANCE);
+
+	GodotDistanceJoint2D *dj = static_cast<GodotDistanceJoint2D *>(joint);
+	dj->set_flag(p_flag, p_enabled);
+}
+
+bool GodotPhysicsServer2D::distance_joint_get_flag(RID p_joint, DistanceFlag p_flag) const {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL_V(joint, false);
+	ERR_FAIL_COND_V(joint->get_type() != JOINT_TYPE_DISTANCE, false);
+
+	GodotDistanceJoint2D *dj = static_cast<GodotDistanceJoint2D *>(joint);
+	return dj->get_flag(p_flag);
+}
+
 void GodotPhysicsServer2D::pulley_joint_set_param(RID p_joint, PulleyParam p_param, real_t p_value) {
 	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL(joint);
 	ERR_FAIL_COND(joint->get_type() != JOINT_TYPE_PULLEY);
 
-	GodotPulleyJoint2D *dsj = static_cast<GodotPulleyJoint2D *>(joint);
-	dsj->set_param(p_param, p_value);
+	GodotPulleyJoint2D *pj = static_cast<GodotPulleyJoint2D *>(joint);
+	pj->set_param(p_param, p_value);
+}
+
+Vector2 GodotPhysicsServer2D::pulley_joint_get_param2D(RID p_joint, PulleyParam p_param) const {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL_V(joint, Vector2());
+	ERR_FAIL_COND_V(joint->get_type() != JOINT_TYPE_PULLEY, Vector2());
+
+	GodotPulleyJoint2D *pj = static_cast<GodotPulleyJoint2D *>(joint);
+	return pj->get_param2D(p_param);
+}
+
+void GodotPhysicsServer2D::pulley_joint_set_param2D(RID p_joint, PulleyParam p_param, Vector2 p_value) {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL(joint);
+	ERR_FAIL_COND(joint->get_type() != JOINT_TYPE_PULLEY);
+
+	GodotPulleyJoint2D *pj = static_cast<GodotPulleyJoint2D *>(joint);
+	pj->set_param2D(p_param, p_value);
 }
 
 real_t GodotPhysicsServer2D::pulley_joint_get_param(RID p_joint, PulleyParam p_param) const {
@@ -1245,9 +1315,29 @@ real_t GodotPhysicsServer2D::pulley_joint_get_param(RID p_joint, PulleyParam p_p
 	ERR_FAIL_NULL_V(joint, 0);
 	ERR_FAIL_COND_V(joint->get_type() != JOINT_TYPE_PULLEY, 0);
 
-	GodotPulleyJoint2D *dsj = static_cast<GodotPulleyJoint2D *>(joint);
-	return dsj->get_param(p_param);
+	GodotPulleyJoint2D *pj = static_cast<GodotPulleyJoint2D *>(joint);
+	return pj->get_param(p_param);
 }
+
+void GodotPhysicsServer2D::pulley_joint_set_flag(RID p_joint, DistanceFlag p_flag, bool p_enabled) {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL(joint);
+	ERR_FAIL_COND(joint->get_type() != JOINT_TYPE_PULLEY);
+
+	GodotPulleyJoint2D *dj = static_cast<GodotPulleyJoint2D *>(joint);
+	dj->set_flag(p_flag, p_enabled);
+}
+
+bool GodotPhysicsServer2D::pulley_joint_get_flag(RID p_joint, DistanceFlag p_flag) const {
+	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
+	ERR_FAIL_NULL_V(joint, false);
+	ERR_FAIL_COND_V(joint->get_type() != JOINT_TYPE_PULLEY, false);
+
+	GodotPulleyJoint2D *dj = static_cast<GodotPulleyJoint2D *>(joint);
+	return dj->get_flag(p_flag);
+}
+
+
 
 
 

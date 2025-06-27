@@ -9,7 +9,7 @@
    height="18.000000px"
    viewBox="0 0 18.000000 18.000000"
    id="svg3"
-   sodipodi:docname="PulleyJoint2D.svg"
+   sodipodi:docname="DistanceJoint2D.svg"
    inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -48,8 +48,8 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:zoom="46.551196"
-     inkscape:cx="2.266322"
-     inkscape:cy="8.6249126"
+     inkscape:cx="1.5574251"
+     inkscape:cy="9.6989988"
      inkscape:window-width="2560"
      inkscape:window-height="1387"
      inkscape:window-x="1912"
@@ -69,40 +69,40 @@
   <g
      id="g3"
      clip-path="url(#clip-path0)">
-    <ellipse
-       style="fill:#87a2f1;fill-opacity:1;stroke-width:1.01889"
-       id="path3"
-       cx="8.743062"
-       cy="8.7108393"
-       rx="7.7763844"
-       ry="7.8945341" />
     <rect
-       style="fill:#87a2f1;fill-opacity:1"
-       id="rect5"
-       width="2.2770629"
-       height="9.9030752"
-       x="1.0096411"
-       y="8.0341654" />
+       style="fill:#739bef;fill-opacity:1;stroke-width:1.54363"
+       id="rect7"
+       width="2.8316996"
+       height="14.5849"
+       x="-14.204968"
+       y="-5.9588861"
+       transform="matrix(-0.72480847,-0.68895042,-0.6797284,0.73346391,0,0)"
+       rx="0.46557444"
+       ry="0" />
     <rect
-       style="fill:#87a2f1;fill-opacity:1"
-       id="rect6"
-       width="2.3415079"
-       height="9.6238127"
-       x="14.177938"
-       y="8.3349094" />
-    <ellipse
-       style="fill:#87a2f1;fill-opacity:1"
-       id="path6"
-       cx="10.460968"
-       cy="9.7312212"
-       rx="2.6416202"
-       ry="1.6326112" />
-    <ellipse
-       style="fill:#739bef;fill-opacity:1;stroke-width:0.701754"
-       id="path7"
-       cx="8.7928104"
-       cy="8.700098"
-       rx="2.7134809"
-       ry="2.5778069" />
+       style="fill:#739bef;fill-opacity:1"
+       id="rect10"
+       width="0.064445175"
+       height="0.27926242"
+       x="4.8978333"
+       y="16.583891" />
+    <rect
+       style="fill:#87a2f1;fill-opacity:1;stroke-width:1.40008"
+       id="rect11"
+       width="6.6808162"
+       height="6.6163712"
+       x="10.783825"
+       y="0.42963466"
+       rx="0"
+       ry="0.42963451" />
+    <rect
+       style="fill:#87a2f1;fill-opacity:1;stroke-width:1.409"
+       id="rect12"
+       width="6.5948892"
+       height="6.7882252"
+       x="0.49407867"
+       y="10.891234"
+       rx="0"
+       ry="0.44079384" />
   </g>
 </svg>

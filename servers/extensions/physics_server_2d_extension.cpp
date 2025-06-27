@@ -315,6 +315,9 @@ void PhysicsServer2DExtension::_bind_methods() {
 	GDVIRTUAL_BIND(_joint_make_pin, "joint", "anchor", "body_a", "body_b");
 	GDVIRTUAL_BIND(_joint_make_groove, "joint", "a_groove1", "a_groove2", "b_anchor", "body_a", "body_b");
 	GDVIRTUAL_BIND(_joint_make_damped_spring, "joint", "anchor_a", "anchor_b", "body_a", "body_b");
+	GDVIRTUAL_BIND(_joint_make_distance, "joint", "anchor_a", "anchor_b", "body_a", "body_b");
+	GDVIRTUAL_BIND(_joint_make_pulley, "joint", "anchor_a", "anchor_b", "ground_anchor_a", "ground_anchor_b", "body_a", "body_b");
+
 
 	GDVIRTUAL_BIND(_pin_joint_set_flag, "joint", "flag", "enabled");
 	GDVIRTUAL_BIND(_pin_joint_get_flag, "joint", "flag");
@@ -324,6 +327,21 @@ void PhysicsServer2DExtension::_bind_methods() {
 
 	GDVIRTUAL_BIND(_damped_spring_joint_set_param, "joint", "param", "value");
 	GDVIRTUAL_BIND(_damped_spring_joint_get_param, "joint", "param");
+
+	GDVIRTUAL_BIND(_distance_joint_set_param, "joint", "param", "value");
+	GDVIRTUAL_BIND(_distance_joint_get_param, "joint", "param");
+
+	GDVIRTUAL_BIND(_distance_joint_set_flag, "joint", "flag", "enabled");
+	GDVIRTUAL_BIND(_distance_joint_get_flag, "joint", "flag");
+
+	GDVIRTUAL_BIND(_pulley_joint_set_param, "joint", "param", "value");
+	GDVIRTUAL_BIND(_pulley_joint_get_param, "joint", "param");
+
+	GDVIRTUAL_BIND(_pulley_joint_set_param2D, "joint", "param", "value");
+	GDVIRTUAL_BIND(_pulley_joint_get_param2D, "joint", "param");
+
+	GDVIRTUAL_BIND(_pulley_joint_set_flag, "joint", "flag", "enabled");
+	GDVIRTUAL_BIND(_pulley_joint_get_flag, "joint", "flag");
 
 	GDVIRTUAL_BIND(_joint_get_type, "joint");
 

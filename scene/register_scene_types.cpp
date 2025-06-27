@@ -289,6 +289,7 @@
 #include "scene/2d/physics/joints/groove_joint_2d.h"
 #include "scene/2d/physics/joints/joint_2d.h"
 #include "scene/2d/physics/joints/pin_joint_2d.h"
+#include "scene/2d/physics/joints/distance_joint_2d.h"
 #include "scene/2d/physics/joints/pulley_joint_2d.h"
 #include "scene/2d/physics/kinematic_collision_2d.h"
 #include "scene/2d/physics/physical_bone_2d.h"
@@ -904,6 +905,7 @@ void register_scene_types() {
 	GDREGISTER_CLASS(PinJoint2D);
 	GDREGISTER_CLASS(GrooveJoint2D);
 	GDREGISTER_CLASS(DampedSpringJoint2D);
+	GDREGISTER_CLASS(DistanceJoint2D);
 	GDREGISTER_CLASS(PulleyJoint2D);
 	GDREGISTER_CLASS(TouchScreenButton);
 #endif // PHYSICS_2D_DISABLED

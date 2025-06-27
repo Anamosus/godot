@@ -288,6 +288,7 @@ public:
 	FUNC4(joint_make_pin, RID, const Vector2 &, RID, RID);
 	FUNC6(joint_make_groove, RID, const Vector2 &, const Vector2 &, const Vector2 &, RID, RID);
 	FUNC5(joint_make_damped_spring, RID, const Vector2 &, const Vector2 &, RID, RID);
+	FUNC5(joint_make_distance, RID, const Vector2 &, const Vector2 &, RID, RID);
 	FUNC7(joint_make_pulley, RID, const Vector2 &, const Vector2 &, const Vector2 &, const Vector2 &, RID, RID);
 
 	FUNC3(pin_joint_set_param, RID, PinJointParam, real_t);
@@ -299,8 +300,24 @@ public:
 	FUNC3(damped_spring_joint_set_param, RID, DampedSpringParam, real_t);
 	FUNC2RC(real_t, damped_spring_joint_get_param, RID, DampedSpringParam);
 
+
+	FUNC3(distance_joint_set_param, RID, DistanceParam, real_t);
+	FUNC2RC(real_t, distance_joint_get_param, RID, DistanceParam);
+
+	FUNC3(distance_joint_set_flag, RID, DistanceFlag, bool);
+	FUNC2RC(bool, distance_joint_get_flag, RID, DistanceFlag);
+
+
+
 	FUNC3(pulley_joint_set_param, RID, PulleyParam, real_t);
 	FUNC2RC(real_t,pulley_joint_get_param, RID, PulleyParam);
+
+	FUNC3(pulley_joint_set_param2D, RID, PulleyParam, Vector2);
+	FUNC2RC(Vector2, pulley_joint_get_param2D, RID, PulleyParam);
+
+	FUNC3(pulley_joint_set_flag, RID, DistanceFlag, bool);
+	FUNC2RC(bool, pulley_joint_get_flag, RID, DistanceFlag);
+
 
 	FUNC1RC(JointType, joint_get_type, RID);
 

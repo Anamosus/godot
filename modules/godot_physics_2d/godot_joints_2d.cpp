@@ -651,24 +651,26 @@ bool GodotPulleyJoint2D::setup(real_t p_step) {
 	n_mass = 1.0f / k;
 
 	target_vrn = 0.0f;
-	v_coef = 1.0f - Math::exp(-damping * (p_step)*k);
-
-	// Calculate spring force.
-	real_t f_spring = (rest_length - (distA + distB)) * stiffness;
-	jA = nA * f_spring * (p_step);
-	jB = nB * f_spring * (p_step);
 
 	return true;	
 }
 
 bool GodotPulleyJoint2D::pre_solve(real_t p_step) {
-	// Apply spring force.
-	if (dynamic_A) {
-		A->apply_impulse(jA, rA);
+	if (frequency > 0) {
+		real_t omega = 2.0f * Math::PI * frequency;
+		real_t a1 = 2.0f * damping + p_step * omega;
+		real_t a2 = p_step * omega * a1;
+		real_t a3 = 1.0f / (1.0f + a2);
+
+		biasRate = omega / a1;
+		massScale = a2 * a3;
+		impulseScale = a3;
+	} else {
+		biasRate = 0.0;
+		massScale = 0.0;
+		impulseScale = 0.0;
 	}
-	if (dynamic_B) {
-		B->apply_impulse(jB, rB);
-	}
+
 	return true;
 }
 
@@ -677,57 +679,128 @@ static inline real_t
 normal_relative_velocity(GodotBody2D *a, GodotBody2D *b, Vector2 rA, Vector2 rB, Vector2 nA, Vector2 nB) {
 	Vector2 vA = a->get_linear_velocity() - (rA - a->get_center_of_mass()).orthogonal() * a->get_angular_velocity();
 	Vector2 vB = b->get_linear_velocity() - (rB - b->get_center_of_mass()).orthogonal() * b->get_angular_velocity();
-
 	return vA.dot(nA) + vB.dot(nB);
 }
 
 void GodotPulleyJoint2D::solve(real_t p_step) {
-	// compute relative velocity
-	 real_t vrn = normal_relative_velocity(A, B, rA, rB, nA, nB) - target_vrn;
+	rA = A->get_transform().basis_xform(anchor_A);
+	rB = B->get_transform().basis_xform(anchor_B);
 
-	// compute velocity loss from drag
-	// not 100% certain this is derived correctly, though it makes sense
-	real_t v_damp = -vrn * v_coef;
-	target_vrn = vrn + v_damp;
+	Vector2 deltaA = (A->get_transform().get_origin() + rA) - (ground_anchor_A);
+	real_t distA = deltaA.length();
 
-	if (dynamic_A) {
-		A->apply_impulse(nA * v_damp * n_mass, rA);
+	if (distA) {
+		nA = deltaA / distA;
+	} else {
+		nA = Vector2();
 	}
-	if (dynamic_B) {
-		B->apply_impulse(nB * v_damp * n_mass, rB);
+
+	Vector2 deltaB = (B->get_transform().get_origin() + rB) - (ground_anchor_B);
+	real_t distB = deltaB.length();
+
+	if (distB) {
+		nB = deltaB / distB;
+	} else {
+		nB = Vector2();
 	}
+
+	 real_t Cdot = normal_relative_velocity(A, B, rA, rB, nA, nB) - target_vrn;
+	 real_t C = distA = distB - max_length;
+
+	 real_t impulse = -massScale * n_mass * (Cdot + biasRate * C) - impulseScale * target_vrn;
+	 target_vrn += impulse;
+
+	 if (dynamic_A) {
+		A->apply_impulse(impulse * nA, rA);
+	 }
+	 if (dynamic_B) {
+		B->apply_impulse(impulse * nB, rB);
+	 }
+
 }
 
 void GodotPulleyJoint2D::set_param(PhysicsServer2D::PulleyParam p_param, real_t p_value) {
 	switch (p_param) {
-		case PhysicsServer2D::PULLEY_REST_LENGTH: {
-			rest_length = p_value;
+		case PhysicsServer2D::PULLEY_MIN_LENGTH: {
+			min_length = p_value;
+		} break;
+		case PhysicsServer2D::PULLEY_MAX_LENGTH: {
+			max_length = p_value;
 		} break;
 		case PhysicsServer2D::PULLEY_DAMPING: {
 			damping = p_value;
 		} break;
 		case PhysicsServer2D::PULLEY_STIFFNESS: {
-			stiffness = p_value;
+			frequency = p_value;
 		} break;
 	}
 }
 
 real_t GodotPulleyJoint2D::get_param(PhysicsServer2D::PulleyParam p_param) const {
 	switch (p_param) {
-		case PhysicsServer2D::PULLEY_REST_LENGTH: {
-			return rest_length;
+		case PhysicsServer2D::PULLEY_MIN_LENGTH: {
+			return min_length;
+		} break;
+		case PhysicsServer2D::PULLEY_MAX_LENGTH: {
+			return max_length;
 		} break;
 		case PhysicsServer2D::PULLEY_DAMPING: {
 			return damping;
 		} break;
 		case PhysicsServer2D::PULLEY_STIFFNESS: {
-			return stiffness;
+			return frequency;
 		} break;
 	}
 
 	ERR_FAIL_V(0);
 }
 
+void GodotPulleyJoint2D::set_param2D(PhysicsServer2D::PulleyParam p_param, Vector2 p_value) {
+	switch (p_param) {
+		case PhysicsServer2D::PULLEY_ANCHOR_A: {
+			anchor_A = p_value;
+		} break;
+		case PhysicsServer2D::PULLEY_ANCHOR_B: {
+			anchor_B = p_value;
+		} break;
+	}
+}
+
+Vector2 GodotPulleyJoint2D::get_param2D(PhysicsServer2D::PulleyParam p_param) const {
+	switch (p_param) {
+		case PhysicsServer2D::PULLEY_ANCHOR_A: {
+			return anchor_A;
+		} break;
+		case PhysicsServer2D::PULLEY_ANCHOR_B: {
+			return anchor_B;
+		} break;
+	}
+
+	ERR_FAIL_V(Vector2());
+}
+
+
+void GodotPulleyJoint2D::set_flag(PhysicsServer2D::DistanceFlag p_flag, bool p_enabled) {
+	switch (p_flag) {
+		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
+			fixed_length = p_enabled;
+			break;
+		default:
+			break;
+	}
+}
+
+bool GodotPulleyJoint2D::get_flag(PhysicsServer2D::DistanceFlag p_flag) const {
+	switch (p_flag) {
+		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
+			return fixed_length;
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
 
 GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_ground_anchor_a,
 		const Vector2 &p_ground_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) : GodotJoint2D(_arr, 2) {
@@ -739,7 +812,239 @@ GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 
 	anchor_A = A->get_inv_transform().xform(p_anchor_a);
 	anchor_B = B->get_inv_transform().xform(p_anchor_b);
 
-	rest_length = p_anchor_a.distance_to(p_ground_anchor_a) + p_anchor_b.distance_to(p_ground_anchor_b);
+	max_length = p_anchor_a.distance_to(p_ground_anchor_a) + p_anchor_b.distance_to(p_ground_anchor_b);
+
+	A->add_constraint(this, 0);
+	B->add_constraint(this, 1);
+}
+
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+
+
+bool GodotDistanceJoint2D::setup(real_t p_step) {
+	dynamic_A = (A->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
+	dynamic_B = (B->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
+
+	if (!dynamic_A && !dynamic_B) {
+		return false;
+	}
+
+	rA = A->get_transform().basis_xform(anchor_A);
+	rB = B->get_transform().basis_xform(anchor_B);
+
+	Vector2 delta = (B->get_transform().get_origin() + rB) - (A->get_transform().get_origin() + rA);
+	real_t dist = delta.length();
+
+	if (dist) {
+		n = delta / dist;
+	} else {
+		n = Vector2();
+	}
+	real_t k = k_scalar(A, B, rA, rB, n);
+	n_mass = 1.0f / k;	
+	return true;
+}
+
+bool GodotDistanceJoint2D::pre_solve(real_t p_step) {
+	rA = A->get_transform().basis_xform(anchor_A);
+	rB = B->get_transform().basis_xform(anchor_B);
+
+	if (frequency > 0) {
+		real_t omega = 2.0f * Math::PI * frequency;
+		real_t a1 = 2.0f * damping + p_step * omega;
+		real_t a2 = p_step * omega * a1;
+		real_t a3 = 1.0f / (1.0f + a2);
+
+		biasRate = omega / a1;
+		massScale = a2 * a3;
+		impulseScale = a3;
+	} else {
+		biasRate = 0.0;
+		massScale = 0.0;
+		impulseScale = 0.0;
+	}
+
+	Vector2 delta = (B->get_transform().get_origin() + rB) - (A->get_transform().get_origin() + rA);
+	real_t dist = delta.length();
+
+	if (dist) {
+		n = delta / dist;
+	} else {
+		n = Vector2();
+	}
+	
+	Vector2 P = (min_impulse + max_impulse) * n;
+	if (dynamic_A) 
+		A->apply_impulse(-P, rA);
+	
+	if (dynamic_B) 
+		B->apply_impulse(P, rB);	
+
+	return true;
+}
+
+void GodotDistanceJoint2D::solve(real_t p_step) {
+	rA = A->get_transform().basis_xform(anchor_A);
+	rB = B->get_transform().basis_xform(anchor_B);
+
+	Vector2 delta = (B->get_transform().get_origin() + rB) - (A->get_transform().get_origin() + rA);
+	real_t dist = delta.length();
+
+	if (dist) {
+		n = delta / dist;
+	} else {
+		n = Vector2();
+	}
+
+	if (fixed_length || min_length > max_length) {	
+		real_t Cdot = normal_relative_velocity(A, B, rA, rB, n);
+		real_t C = dist - max_length;
+
+		real_t impulse = -massScale * n_mass * (Cdot + biasRate * C) - impulseScale * max_impulse;
+		max_impulse += impulse;
+
+		Vector2 P = impulse * n;
+		if (dynamic_A) {
+			A->apply_impulse(-P, rA);
+		}
+		if (dynamic_B) {
+			B->apply_impulse(P, rB);
+		}
+	}		
+	else
+	{
+		if (max_length < 65535)
+		{
+			real_t Cdot = normal_relative_velocity(A, B, rA, rB, n);
+			real_t C = dist - max_length;
+
+			real_t b = 0.0f;
+			float ms = 1.0f;
+			float is = 0.0f;
+
+			if (C < 0.0f) {
+				b = C * (1 / p_step);
+			} else {
+				b = biasRate * C;
+				ms = massScale;
+				is = impulseScale;
+			}
+
+			float impulse = -ms * n_mass * (Cdot + b) - is * max_impulse;
+			float newImpulse = MIN(0.0f, max_impulse + impulse);
+			impulse = newImpulse - max_impulse;
+			max_impulse = newImpulse;
+
+			Vector2 P = impulse * n;
+			if (dynamic_A) {
+				A->apply_impulse(-P, rA);
+			}
+			if (dynamic_B) {
+				B->apply_impulse(P, rB);
+			}
+		}
+		if (min_length > 0)
+		{
+			real_t Cdot = normal_relative_velocity(A, B, rA, rB, n);
+			real_t C = dist - min_length;
+
+			real_t b = 0.0f;
+			float ms = 1.0f;
+			float is = 0.0f;
+
+			if (C > 0.0f) {
+				b = C * (1 / p_step);
+			} else {
+				b = biasRate * C;
+				ms = massScale;
+				is = impulseScale;
+			}
+
+			float impulse = -ms * n_mass * (Cdot + b) - is * min_impulse;
+			float newImpulse = MAX(0.0f, min_impulse + impulse);
+			impulse = newImpulse - min_impulse;
+			min_impulse = newImpulse;
+
+			Vector2 P = impulse * n;
+			if (dynamic_A) {
+				A->apply_impulse(-P, rA);
+			}
+			if (dynamic_B) {
+				B->apply_impulse(P, rB);
+			}
+		}
+	} 		
+}
+
+
+void GodotDistanceJoint2D::set_param(PhysicsServer2D::DistanceParam p_param, real_t p_value) {
+	switch (p_param) {
+		case PhysicsServer2D::DISTANCE_MIN_LENGTH: {
+			min_length = p_value;
+		} break;
+		case PhysicsServer2D::DISTANCE_MAX_LENGTH: {
+			max_length = p_value;
+		} break;
+		case PhysicsServer2D::DISTANCE_SPRING_FREQUENCY: {
+			frequency = p_value;
+		} break;
+		case PhysicsServer2D::DISTANCE_SPRING_DAMPING: {
+			damping = p_value;
+		} break;
+	}
+}
+
+real_t GodotDistanceJoint2D::get_param(PhysicsServer2D::DistanceParam p_param) const {
+	switch (p_param) {
+		case PhysicsServer2D::DISTANCE_MIN_LENGTH: {
+			return min_length;
+		} break;
+		case PhysicsServer2D::DISTANCE_MAX_LENGTH: {
+			return max_length;
+		} break;
+		case PhysicsServer2D::DISTANCE_SPRING_FREQUENCY: {
+			return frequency;
+		} break;
+		case PhysicsServer2D::DISTANCE_SPRING_DAMPING: {
+			return damping;
+		} break;
+	}
+
+	ERR_FAIL_V(0);
+}
+
+void GodotDistanceJoint2D::set_flag(PhysicsServer2D::DistanceFlag p_flag, bool p_enabled) {
+	switch (p_flag) {
+		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
+			fixed_length = p_enabled;
+			break;
+		default:
+			break;
+	}
+}
+
+bool GodotDistanceJoint2D::get_flag(PhysicsServer2D::DistanceFlag p_flag) const {
+	switch (p_flag) {
+		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
+			return fixed_length;
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+GodotDistanceJoint2D::GodotDistanceJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
+		GodotJoint2D(_arr, 2) {
+	A = p_body_a;
+	B = p_body_b;
+	anchor_A = A->get_inv_transform().xform(p_anchor_a);
+	anchor_B = B->get_inv_transform().xform(p_anchor_b);
+
+	max_length = p_anchor_a.distance_to(p_anchor_b);
 
 	A->add_constraint(this, 0);
 	B->add_constraint(this, 1);

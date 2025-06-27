@@ -534,6 +534,7 @@ public:
 		JOINT_TYPE_PIN,
 		JOINT_TYPE_GROOVE,
 		JOINT_TYPE_DAMPED_SPRING,
+		JOINT_TYPE_DISTANCE, 
 		JOINT_TYPE_PULLEY,
 		JOINT_TYPE_MAX
 	};
@@ -553,6 +554,7 @@ public:
 	virtual void joint_make_pin(RID p_joint, const Vector2 &p_anchor, RID p_body_a, RID p_body_b = RID()) = 0;
 	virtual void joint_make_groove(RID p_joint, const Vector2 &p_a_groove1, const Vector2 &p_a_groove2, const Vector2 &p_b_anchor, RID p_body_a, RID p_body_b) = 0;
 	virtual void joint_make_damped_spring(RID p_joint, const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, RID p_body_a, RID p_body_b = RID()) = 0;
+	virtual void joint_make_distance(RID p_joint, const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, RID p_body_a, RID p_body_b = RID()) = 0;
 	virtual void joint_make_pulley(RID p_joint, const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_ground_anchor_a,
 			const Vector2 &p_ground_anchor_b, RID p_body_a, RID p_body_b = RID()) = 0;
 
@@ -583,13 +585,41 @@ public:
 	virtual void damped_spring_joint_set_param(RID p_joint, DampedSpringParam p_param, real_t p_value) = 0;
 	virtual real_t damped_spring_joint_get_param(RID p_joint, DampedSpringParam p_param) const = 0;
 
+
+	enum DistanceParam {
+		DISTANCE_MIN_LENGTH,
+		DISTANCE_MAX_LENGTH,
+		DISTANCE_SPRING_FREQUENCY,
+		DISTANCE_SPRING_DAMPING
+	};
+
+	virtual void distance_joint_set_param(RID p_joint, DistanceParam p_param, real_t p_value) = 0;
+	virtual real_t distance_joint_get_param(RID p_joint, DistanceParam p_param) const = 0;
+
+	enum DistanceFlag {
+		DISTANCE_FIXED_LENGTH
+	};
+
+	virtual void distance_joint_set_flag(RID p_joint, DistanceFlag p_flag, bool p_enabled) = 0;
+	virtual bool distance_joint_get_flag(RID p_joint, DistanceFlag p_flag) const = 0;
+
+
 	enum PulleyParam {
-		PULLEY_REST_LENGTH,
+		PULLEY_MIN_LENGTH,
+		PULLEY_MAX_LENGTH,
+		PULLEY_ANCHOR_A,
+		PULLEY_ANCHOR_B,
 		PULLEY_STIFFNESS,
 		PULLEY_DAMPING
 	};
 	virtual void pulley_joint_set_param(RID p_joint, PulleyParam p_param, real_t p_value) = 0;
 	virtual real_t pulley_joint_get_param(RID p_joint, PulleyParam p_param) const = 0;
+	
+	virtual void pulley_joint_set_param2D(RID p_joint, PulleyParam p_param, Vector2 p_value) = 0;
+	virtual Vector2 pulley_joint_get_param2D(RID p_joint, PulleyParam p_param) const = 0;
+
+	virtual void pulley_joint_set_flag(RID p_joint, DistanceFlag p_param, bool p_value) = 0;
+	virtual bool pulley_joint_get_flag(RID p_joint, DistanceFlag p_param) const = 0;
 
 	virtual JointType joint_get_type(RID p_joint) const = 0;
 
@@ -856,6 +886,8 @@ VARIANT_ENUM_CAST(PhysicsServer2D::JointType);
 VARIANT_ENUM_CAST(PhysicsServer2D::PinJointParam);
 VARIANT_ENUM_CAST(PhysicsServer2D::PinJointFlag);
 VARIANT_ENUM_CAST(PhysicsServer2D::DampedSpringParam);
+VARIANT_ENUM_CAST(PhysicsServer2D::DistanceParam);
+VARIANT_ENUM_CAST(PhysicsServer2D::DistanceFlag);
 VARIANT_ENUM_CAST(PhysicsServer2D::PulleyParam);
 VARIANT_ENUM_CAST(PhysicsServer2D::AreaBodyStatus);
 VARIANT_ENUM_CAST(PhysicsServer2D::ProcessInfo);

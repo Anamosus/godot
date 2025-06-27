@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  pulley_joint_2d.h                                              */
+/*  distance_joint_2d.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -34,32 +34,34 @@
 
 class PhysicsBody2D;
 
-class PulleyJoint2D : public Joint2D {
-	GDCLASS(PulleyJoint2D, Joint2D);
+class DistanceJoint2D : public Joint2D {
+	GDCLASS(DistanceJoint2D, Joint2D);
 
 	real_t stiffness = 5.0;
 	real_t damping = 1.0;
 	real_t min_length = 0.0;
 	real_t max_length = 0.0;
 
-	real_t length_a = 50.0;
-	real_t length_b = 50.0;
+	real_t length = 50.0;
 
-	NodePath other_anchor;
-	Transform2D other_transform;
 
 	bool fixed_length = false;
 
-	String warning;
 
 protected:
 	void _notification(int p_what);
-
 	virtual void _configure_joint(RID p_joint, PhysicsBody2D *body_a, PhysicsBody2D *body_b) override;
 	static void _bind_methods();
 
 public:
-	virtual PackedStringArray get_configuration_warnings() const override;
+	void set_damping(real_t p_damping);
+	real_t get_damping() const;
+
+	void set_stiffness(real_t p_stiffness);
+	real_t get_stiffness() const;
+
+	void set_length(real_t p_length);
+	real_t get_length() const;
 
 	void set_min_length(real_t p_length);
 	real_t get_min_length() const;
@@ -67,23 +69,8 @@ public:
 	void set_max_length(real_t p_length);
 	real_t get_max_length() const;
 
-	void set_length_a(real_t p_length);
-	real_t get_length_a() const;
-
-	void set_length_b(real_t p_length);
-	real_t get_length_b() const;
-
-	void set_damping(real_t p_damping);
-	real_t get_damping() const;
-
-	void set_stiffness(real_t p_stiffness);
-	real_t get_stiffness() const;
-
-	void set_other_anchor(const NodePath &p_other_anchor);
-	NodePath get_other_anchor() const;
-	
 	bool is_fixed_distance() const;
 	void set_fixed_distance(bool p_fixed_distance);
 
-	PulleyJoint2D();
+	DistanceJoint2D();
 };
