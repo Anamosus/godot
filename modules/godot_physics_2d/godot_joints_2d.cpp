@@ -602,78 +602,18 @@ GodotDampedSpringJoint2D::GodotDampedSpringJoint2D(const Vector2 &p_anchor_a, co
 
 static inline real_t k_scalar(GodotBody2D *a, GodotBody2D *b, const Vector2 &rA, const Vector2 &rB, const Vector2 &nA, const Vector2 &nB) {
 	real_t value = 0.0;
-
 	{
 		value += a->get_inv_mass();
 		real_t rcn = (rA - a->get_center_of_mass()).cross(nA);
 		value += a->get_inv_inertia() * rcn * rcn;
 	}
-
 	if (b) {
 		value += b->get_inv_mass();
 		real_t rcn = (rB - b->get_center_of_mass()).cross(-nB);
 		value += b->get_inv_inertia() * rcn * rcn;
 	}
-
 	return value;
 }
-
-bool GodotPulleyJoint2D::setup(real_t p_step) {
-	dynamic_A = (A->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
-	dynamic_B = (B->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
-
-	if (!dynamic_A && !dynamic_B) {
-		return false;
-	}
-
-	rA = A->get_transform().basis_xform(anchor_A);
-	rB = B->get_transform().basis_xform(anchor_B);
-
-	Vector2 deltaA =  (A->get_transform().get_origin() + rA) - (ground_anchor_A) ;
-	real_t distA = deltaA.length();
-
-	if (distA) {
-		nA = deltaA / distA;
-	} else {
-		nA = Vector2();
-	}
-
-	Vector2 deltaB = (B->get_transform().get_origin() + rB) - (ground_anchor_B);
-	real_t distB = deltaB.length();
-
-	if (distB) {
-		nB = deltaB / distB;
-	} else {
-		nB = Vector2();
-	}
-
-	real_t k = k_scalar(A, B, rA, rB, nA, nB);
-	n_mass = 1.0f / k;
-
-	target_vrn = 0.0f;
-
-	return true;	
-}
-
-bool GodotPulleyJoint2D::pre_solve(real_t p_step) {
-	if (frequency > 0) {
-		real_t omega = 2.0f * Math::PI * frequency;
-		real_t a1 = 2.0f * damping + p_step * omega;
-		real_t a2 = p_step * omega * a1;
-		real_t a3 = 1.0f / (1.0f + a2);
-
-		biasRate = omega / a1;
-		massScale = a2 * a3;
-		impulseScale = a3;
-	} else {
-		biasRate = 0.0;
-		massScale = 0.0;
-		impulseScale = 0.0;
-	}
-
-	return true;
-}
-
 
 static inline real_t
 normal_relative_velocity(GodotBody2D *a, GodotBody2D *b, Vector2 rA, Vector2 rB, Vector2 nA, Vector2 nB) {
@@ -682,7 +622,8 @@ normal_relative_velocity(GodotBody2D *a, GodotBody2D *b, Vector2 rA, Vector2 rB,
 	return vA.dot(nA) + vB.dot(nB);
 }
 
-void GodotPulleyJoint2D::solve(real_t p_step) {
+
+inline void GodotPulleyJoint2D::ComputeVectors() {
 	rA = A->get_transform().basis_xform(anchor_A);
 	rB = B->get_transform().basis_xform(anchor_B);
 
@@ -704,19 +645,132 @@ void GodotPulleyJoint2D::solve(real_t p_step) {
 		nB = Vector2();
 	}
 
-	 real_t Cdot = normal_relative_velocity(A, B, rA, rB, nA, nB) - target_vrn;
-	 real_t C = distA = distB - max_length;
+	distance = distA + distB;
+}
 
-	 real_t impulse = -massScale * n_mass * (Cdot + biasRate * C) - impulseScale * target_vrn;
-	 target_vrn += impulse;
 
-	 if (dynamic_A) {
-		A->apply_impulse(impulse * nA, rA);
+bool GodotPulleyJoint2D::setup(real_t p_step) {
+	dynamic_A = (A->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
+	dynamic_B = (B->get_mode() > PhysicsServer2D::BODY_MODE_KINEMATIC);
+
+	if (!dynamic_A && !dynamic_B) {
+		return false;
+	}
+
+	ComputeVectors();
+
+	real_t k = k_scalar(A, B, rA, rB, nA, nB);
+	n_mass = 1.0f / k;
+
+	return true;	
+}
+
+bool GodotPulleyJoint2D::pre_solve(real_t p_step) {
+	if (frequency > 0) {
+		real_t omega = 2.0f * Math::PI * frequency;
+		real_t a1 = 2.0f * damping + p_step * omega;
+		real_t a2 = p_step * omega * a1;
+		real_t a3 = 1.0f / (1.0f + a2);
+
+		biasRate = omega / a1;
+		massScale = a2 * a3;
+		impulseScale = a3;
+	} else {
+		biasRate = 0.0;
+		massScale = 0.0;
+		impulseScale = 0.0;
+	}
+
+	ComputeVectors();
+
+	real_t P = min_impulse + max_impulse;
+
+	if (dynamic_A) {
+		A->apply_impulse(P * nA, rA);
+	}
+	if (dynamic_B) {
+		B->apply_impulse(P * nB, rB);
+	}
+
+	return true;
+}
+
+
+void GodotPulleyJoint2D::solve(real_t p_step) {
+	 ComputeVectors();
+
+	 if (fixed_length || min_length > max_length) {
+		real_t Cdot = normal_relative_velocity(A, B, rA, rB, nA, nB);
+		real_t C = distance - max_length;
+
+		real_t impulse = -massScale * n_mass * (Cdot + biasRate * C) - impulseScale * max_impulse;
+		max_impulse += impulse;
+
+		if (dynamic_A) {
+			A->apply_impulse(impulse * nA, rA);
+		}
+		if (dynamic_B) {
+			B->apply_impulse(impulse * nB, rB);
+		}
+	 }else
+	 {
+		if (max_length < 65535) {
+			real_t Cdot = normal_relative_velocity(A, B, rA, rB, nA, nB);
+			real_t C = distance - max_length;
+
+			real_t b = 0.0f;
+			real_t ms = 1.0f;
+			real_t is = 0.0f;
+
+			if (C < 0.0f) {
+				b = C * (1 / p_step);
+			} else {
+				b = biasRate * C;
+				ms = massScale;
+				is = impulseScale;
+			}
+
+			real_t impulse = -ms * n_mass * (Cdot + b) - is * max_impulse;
+			real_t newImpulse = MIN(0.0f, max_impulse + impulse);
+			impulse = newImpulse - max_impulse;
+			max_impulse = newImpulse;
+						
+			if (dynamic_A) {
+				A->apply_impulse(impulse * nA, rA);
+			}
+			if (dynamic_B) {
+				B->apply_impulse(impulse * nB, rB);
+			}
+		}
+		if (min_length > 0) {
+			real_t Cdot = normal_relative_velocity(A, B, rA, rB, nA, nB);
+			real_t C = distance - min_length;
+
+			real_t b = 0.0f;
+			real_t ms = 1.0f;
+			real_t is = 0.0f;
+
+			if (C > 0.0f) {
+				b = C * (1 / p_step);
+			} else {
+				b = biasRate * C;
+				ms = massScale;
+				is = impulseScale;
+			}
+
+			real_t impulse = -ms * n_mass * (Cdot + b) - is * min_impulse;
+			real_t newImpulse = MAX(0.0f, min_impulse + impulse);
+			impulse = newImpulse - min_impulse;
+			min_impulse = newImpulse;
+			
+			if (dynamic_A) {
+				A->apply_impulse(impulse * nA, rA);
+			}
+			if (dynamic_B) {
+				B->apply_impulse(impulse * nB, rB);
+			}
+		}
 	 }
-	 if (dynamic_B) {
-		B->apply_impulse(impulse * nB, rB);
-	 }
-
 }
 
 void GodotPulleyJoint2D::set_param(PhysicsServer2D::PulleyParam p_param, real_t p_value) {
@@ -780,26 +834,21 @@ Vector2 GodotPulleyJoint2D::get_param2D(PhysicsServer2D::PulleyParam p_param) co
 }
 
 
-void GodotPulleyJoint2D::set_flag(PhysicsServer2D::DistanceFlag p_flag, bool p_enabled) {
+void GodotPulleyJoint2D::set_flag(PhysicsServer2D::PulleyFlag p_flag, bool p_enabled) {
 	switch (p_flag) {
-		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
+		case PhysicsServer2D::PULLEY_FIXED_LENGTH:
 			fixed_length = p_enabled;
-			break;
-		default:
 			break;
 	}
 }
 
-bool GodotPulleyJoint2D::get_flag(PhysicsServer2D::DistanceFlag p_flag) const {
+bool GodotPulleyJoint2D::get_flag(PhysicsServer2D::PulleyFlag p_flag) const {
 	switch (p_flag) {
-		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
+		case PhysicsServer2D::PULLEY_FIXED_LENGTH:
 			return fixed_length;
 			break;
-		default:
-			break;
 	}
-
-	return false;
+	ERR_FAIL_V(false);
 }
 
 GodotPulleyJoint2D::GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_ground_anchor_a,
@@ -921,8 +970,8 @@ void GodotDistanceJoint2D::solve(real_t p_step) {
 			real_t C = dist - max_length;
 
 			real_t b = 0.0f;
-			float ms = 1.0f;
-			float is = 0.0f;
+			real_t ms = 1.0f;
+			real_t is = 0.0f;
 
 			if (C < 0.0f) {
 				b = C * (1 / p_step);
@@ -932,8 +981,8 @@ void GodotDistanceJoint2D::solve(real_t p_step) {
 				is = impulseScale;
 			}
 
-			float impulse = -ms * n_mass * (Cdot + b) - is * max_impulse;
-			float newImpulse = MIN(0.0f, max_impulse + impulse);
+			real_t impulse = -ms * n_mass * (Cdot + b) - is * max_impulse;
+			real_t newImpulse = MIN(0.0f, max_impulse + impulse);
 			impulse = newImpulse - max_impulse;
 			max_impulse = newImpulse;
 
@@ -951,8 +1000,8 @@ void GodotDistanceJoint2D::solve(real_t p_step) {
 			real_t C = dist - min_length;
 
 			real_t b = 0.0f;
-			float ms = 1.0f;
-			float is = 0.0f;
+			real_t ms = 1.0f;
+			real_t is = 0.0f;
 
 			if (C > 0.0f) {
 				b = C * (1 / p_step);
@@ -962,8 +1011,8 @@ void GodotDistanceJoint2D::solve(real_t p_step) {
 				is = impulseScale;
 			}
 
-			float impulse = -ms * n_mass * (Cdot + b) - is * min_impulse;
-			float newImpulse = MAX(0.0f, min_impulse + impulse);
+			real_t impulse = -ms * n_mass * (Cdot + b) - is * min_impulse;
+			real_t newImpulse = MAX(0.0f, min_impulse + impulse);
 			impulse = newImpulse - min_impulse;
 			min_impulse = newImpulse;
 
@@ -1020,8 +1069,6 @@ void GodotDistanceJoint2D::set_flag(PhysicsServer2D::DistanceFlag p_flag, bool p
 		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
 			fixed_length = p_enabled;
 			break;
-		default:
-			break;
 	}
 }
 
@@ -1030,11 +1077,8 @@ bool GodotDistanceJoint2D::get_flag(PhysicsServer2D::DistanceFlag p_flag) const 
 		case PhysicsServer2D::DISTANCE_FIXED_LENGTH:
 			return fixed_length;
 			break;
-		default:
-			break;
 	}
-
-	return false;
+	ERR_FAIL_V(false);
 }
 
 GodotDistanceJoint2D::GodotDistanceJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :

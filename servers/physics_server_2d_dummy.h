@@ -335,8 +335,8 @@ public:
 	virtual void pulley_joint_set_param2D(RID p_joint, PulleyParam p_param, Vector2 p_value) override {}
 	virtual Vector2 pulley_joint_get_param2D(RID p_joint, PulleyParam p_param) const override { return Vector2(0,0); }
 
-	virtual void pulley_joint_set_flag(RID p_joint, DistanceFlag p_flag, bool p_value) override {}
-	virtual bool pulley_joint_get_flag(RID p_joint, DistanceFlag p_flag) const override { return 0; }
+	virtual void pulley_joint_set_flag(RID p_joint, PulleyFlag p_flag, bool p_value) override {}
+	virtual bool pulley_joint_get_flag(RID p_joint, PulleyFlag p_flag) const override { return 0; }
 
 	virtual JointType joint_get_type(RID p_joint) const override { return JointType::JOINT_TYPE_PIN; }
 

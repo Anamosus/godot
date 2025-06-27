@@ -215,8 +215,8 @@ class GodotPulleyJoint2D : public GodotJoint2D {
 	Vector2 rA, rB;
 	Vector2 nA, nB;
 	real_t n_mass = 0.0;
+	real_t distance = 0.0;
 
-	real_t target_vrn = 0.0;
 	real_t max_impulse = 0.0;
 	real_t min_impulse = 0.0;
 
@@ -226,7 +226,7 @@ class GodotPulleyJoint2D : public GodotJoint2D {
 
 public:
 	virtual PhysicsServer2D::JointType get_type() const override { return PhysicsServer2D::JOINT_TYPE_PULLEY; }
-
+	inline void ComputeVectors();
 	virtual bool setup(real_t p_step) override;
 	virtual bool pre_solve(real_t p_step) override;
 	virtual void solve(real_t p_step) override;
@@ -238,8 +238,8 @@ public:
 	Vector2 get_param2D(PhysicsServer2D::PulleyParam p_param) const;
 
 
-	void set_flag(PhysicsServer2D::DistanceFlag p_flag, bool p_enabled);
-	bool get_flag(PhysicsServer2D::DistanceFlag p_flag) const;
+	void set_flag(PhysicsServer2D::PulleyFlag p_flag, bool p_enabled);
+	bool get_flag(PhysicsServer2D::PulleyFlag p_flag) const;
 
 	GodotPulleyJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, const Vector2 &p_ground_anchor_a,
 			const Vector2 &p_ground_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);

@@ -1319,7 +1319,7 @@ real_t GodotPhysicsServer2D::pulley_joint_get_param(RID p_joint, PulleyParam p_p
 	return pj->get_param(p_param);
 }
 
-void GodotPhysicsServer2D::pulley_joint_set_flag(RID p_joint, DistanceFlag p_flag, bool p_enabled) {
+void GodotPhysicsServer2D::pulley_joint_set_flag(RID p_joint, PulleyFlag p_flag, bool p_enabled) {
 	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL(joint);
 	ERR_FAIL_COND(joint->get_type() != JOINT_TYPE_PULLEY);
@@ -1328,7 +1328,7 @@ void GodotPhysicsServer2D::pulley_joint_set_flag(RID p_joint, DistanceFlag p_fla
 	dj->set_flag(p_flag, p_enabled);
 }
 
-bool GodotPhysicsServer2D::pulley_joint_get_flag(RID p_joint, DistanceFlag p_flag) const {
+bool GodotPhysicsServer2D::pulley_joint_get_flag(RID p_joint, PulleyFlag p_flag) const {
 	GodotJoint2D *joint = joint_owner.get_or_null(p_joint);
 	ERR_FAIL_NULL_V(joint, false);
 	ERR_FAIL_COND_V(joint->get_type() != JOINT_TYPE_PULLEY, false);

@@ -435,8 +435,8 @@ public:
 	EXBIND3(distance_joint_set_flag, RID, DistanceFlag, bool)
 	EXBIND2RC(bool, distance_joint_get_flag, RID, DistanceFlag)
 
-	EXBIND3(pulley_joint_set_flag, RID, DistanceFlag, bool)
-	EXBIND2RC(bool, pulley_joint_get_flag, RID, DistanceFlag)
+	EXBIND3(pulley_joint_set_flag, RID, PulleyFlag, bool)
+	EXBIND2RC(bool, pulley_joint_get_flag, RID, PulleyFlag)
 
 	EXBIND3(pulley_joint_set_param, RID, PulleyParam, real_t)
 	EXBIND2RC(real_t, pulley_joint_get_param, RID, PulleyParam)

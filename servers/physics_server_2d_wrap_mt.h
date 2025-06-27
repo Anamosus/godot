@@ -315,8 +315,8 @@ public:
 	FUNC3(pulley_joint_set_param2D, RID, PulleyParam, Vector2);
 	FUNC2RC(Vector2, pulley_joint_get_param2D, RID, PulleyParam);
 
-	FUNC3(pulley_joint_set_flag, RID, DistanceFlag, bool);
-	FUNC2RC(bool, pulley_joint_get_flag, RID, DistanceFlag);
+	FUNC3(pulley_joint_set_flag, RID, PulleyFlag, bool);
+	FUNC2RC(bool, pulley_joint_get_flag, RID, PulleyFlag);
 
 
 	FUNC1RC(JointType, joint_get_type, RID);
