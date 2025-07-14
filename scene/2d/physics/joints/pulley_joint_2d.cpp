@@ -158,6 +158,9 @@ void PulleyJoint2D::set_max_length(real_t p_length) {
 }
 
 real_t PulleyJoint2D::get_max_length() const {
+	if (is_configured() && !Engine::get_singleton()->is_editor_hint()) {
+		return PhysicsServer2D::get_singleton()->pulley_joint_get_param(get_rid(), PhysicsServer2D::PULLEY_MAX_LENGTH);
+	}
 	return max_length;
 }
 
